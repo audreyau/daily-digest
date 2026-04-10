@@ -222,7 +222,7 @@ function buildMarkdown({ weather, hackerNews, quote, spotify }) {
             lines.push(`### Recently Played`);
             lines.push('');
             for (const t of spotify.recent) {
-                lines.push(`- [${t.name}](${t.url}) - ${t.artist} <!-- spotify:track:${t.id}`)
+                lines.push(`- [${t.name}](${t.url}) - ${t.artist} <!-- spotify:track:${t.id} -->`)
             }
             lines.push('');
         }
