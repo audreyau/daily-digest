@@ -207,7 +207,7 @@ function buildMarkdown({ weather, hackerNews, quote, spotify }) {
 
     // Spotify
     if (spotify) {
-        lines.push('## Spotify');
+        lines.push('## What Audrey\'s Listening To');
         lines.push('');
 
         if (spotify.current) {
