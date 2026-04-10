@@ -25,7 +25,7 @@ async function fetchJSON(url, headers = {}) {
         const res = await fetch(url, { headers });
         if (!res.ok) throw new Error(`HTTP ${res.status} - ${res.statusText}`)
         const text = await res.text();
-        if (!text) return nulll
+        if (!text) return null;
         return JSON.parse(text);
     } catch (err) {
         console.warn(`Failed to fetch ${url}: ${err.message}`);
@@ -169,16 +169,16 @@ function buildMarkdown({ weather, hackerNews, quote, spotify }) {
     const lines = []
 
     lines.push(`# Daily Digest - ${prettyDate}\n`);
-    lines.push('')
+    lines.push('');
 
     // Quote
     if (quote) {
         lines.push(`> "${quote.text}" - ${quote.author}\n`);
-        lines.push('')
+        lines.push('');
     }
 
     lines.push('---');
-    lines.push('')
+    lines.push('');
 
     // Weather
     if (weather) {
@@ -212,7 +212,7 @@ function buildMarkdown({ weather, hackerNews, quote, spotify }) {
 
         if (spotify.current) {
             const status = spotify.current.isPlaying ? 'Now Playing' : 'Last Played';
-            lines.push(`**${status}:** ${spotify.current.name} by ${spotify.current.artists.join(', ')} from the album *${spotify.current.album}*`);
+            lines.push(`**${status}:** [${spotify.current.name}](${spotify.current.url}) by ${spotify.current.artists.join(', ')}`);
             lines.push('');
             lines.push(`<!-- spotify:embed:${spotify.current.id} -->`);
             lines.push('');
@@ -234,7 +234,7 @@ function buildMarkdown({ weather, hackerNews, quote, spotify }) {
                 lines.push(`${i + 1}. [${t.name}](${t.url}) - ${t.artist} <!-- spotify:track:${t.id} -->`);
             }
             lines.push('');
-        }
+        };
     }
 
     lines.push('---');
