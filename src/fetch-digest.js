@@ -23,10 +23,10 @@ const prettyDate = today.toLocaleDateString('en-US', {
 async function fetchJSON(url, headers = {}) {
     try {
         const res = await fetch(url, { headers });
-        if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status} for ${url}`);
-        }
-        return await res.json();
+        if (!res.ok) throw new Error(`HTTP ${res.status} - ${res.statusText}`)
+        const text = await res.text();
+        if (!text) return nulll
+        return JSON.parse(text);
     } catch (err) {
         console.warn(`Failed to fetch ${url}: ${err.message}`);
         return null;
@@ -85,7 +85,14 @@ async function getQuote() {
 
 // Spotify
 async function getSpotifyAccessToken() {
-    if (!SPOTIFY_CLIENT_ID || !SPOTIFY_CLIENT_SECRET || !SPOTIFY_REFRESH_TOKEN) return null;
+    if (!SPOTIFY_CLIENT_ID || !SPOTIFY_CLIENT_SECRET || !SPOTIFY_REFRESH_TOKEN) {
+        console.warn('Spotify credentials not fully set. Skipping Spotify data.',
+            !SPOTIFY_CLIENT_ID ? 'Missing SPOTIFY_CLIENT_ID.' : '',
+            !SPOTIFY_CLIENT_SECRET ? 'Missing SPOTIFY_CLIENT_SECRET.' : '',
+            !SPOTIFY_REFRESH_TOKEN ? 'Missing SPOTIFY_REFRESH_TOKEN.' : ''
+        );
+        return null;
+    }
     
     try {
         const res = await fetch('https://accounts.spotify.com/api/token', {
@@ -101,10 +108,15 @@ async function getSpotifyAccessToken() {
         });
 
         const data = await res.json();
-        return data.access_token || null;
+        if (!data.access_token) {
+            console.warn('Spotify: token refresh failed - ', data.error || data)
+            return null
+        }
+        console.log('Spotify access token refreshed successfully.');
+        return data.access_token;
 
     } catch (err) {
-        console.warn(`Failed to refresh Spotify access token: ${err.message}`);
+        console.warn(`Spotify: failed to refresh token - ${err.message}`);
         return null;
     }
 }
@@ -114,6 +126,8 @@ async function getSpotifyData() {
     if (!token) return null;
 
     const headers = { Authorization: `Bearer ${token}` };
+
+    console.log('Spotify: fetching recently played, top tracks, and now playing data...');
 
     const [recentlyPlayed, topTracks, nowPlaying] = await Promise.all([
         fetchJSON('https://api.spotify.com/v1/me/player/recently-played?limit=5', headers),
