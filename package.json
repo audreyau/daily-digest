@@ -2,10 +2,11 @@
   "name": "daily-digest",
   "version": "1.0.0",
   "description": "Automated daily digest",
-  "main": "index.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "digest": "node src/digest.js"
   },
   "author": "Audrey Ekstrom",
+  "keywords": ["github-actions", "automation", "daily-digest"],
   "license": "MIT"
 }
