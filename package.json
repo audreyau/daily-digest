@@ -4,7 +4,8 @@
   "description": "Automated daily digest",
   "type": "module",
   "scripts": {
-    "digest": "node src/digest.js"
+    "digest": "node src/digest.js",
+    "build": "node src/build-site.js"
   },
   "author": "Audrey Ekstrom",
   "keywords": ["github-actions", "automation", "daily-digest"],
