@@ -4,7 +4,7 @@
   "description": "Automated daily digest",
   "type": "module",
   "scripts": {
-    "digest": "node src/digest.js",
+    "digest": "node src/fetch-digest.js",
     "build": "node src/build-site.js"
   },
   "author": "Audrey Ekstrom",

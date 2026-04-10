@@ -6,6 +6,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIGESTS_DIR = join(__dirname, '..', 'digests');
 const WEATHER_CITY = process.env.WEATHER_CITY || 'Beaverton';
 const WEATHER_COUNTRY = process.env.WEATHER_COUNTRY || 'US';
+const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || ''; 
+const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET || '';
+const SPOTIFY_REFRESH_TOKEN = process.env.SPOTIFY_REFRESH_TOKEN || '';
 
 const today = new Date();
 const dateStr = today.toISOString().slice(0, 10);
@@ -80,8 +83,75 @@ async function getQuote() {
     return { text: data[0].q, author: data[0].a };
 }
 
+// Spotify
+async function getSpotifyAccessToken() {
+    if (!SPOTIFY_CLIENT_ID || !SPOTIFY_CLIENT_SECRET || !SPOTIFY_REFRESH_TOKEN) return null;
+    
+    try {
+        const res = await fetch('https://accounts.spotify.com/api/token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                Authorization: `Basic ${Buffer.from(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`).toString('base64')}`,
+            },
+            body: new URLSearchParams({
+                grant_type: 'refresh_token',
+                refresh_token: SPOTIFY_REFRESH_TOKEN,
+            }),
+        });
+
+        const data = await res.json();
+        return data.access_token || null;
+
+    } catch (err) {
+        console.warn(`Failed to refresh Spotify access token: ${err.message}`);
+        return null;
+    }
+}
+
+async function getSpotifyData() {
+    const token = await getSpotifyAccessToken();
+    if (!token) return null;
+
+    const headers = { Authorization: `Bearer ${token}` };
+
+    const [recentlyPlayed, topTracks, nowPlaying] = await Promise.all([
+        fetchJSON('https://api.spotify.com/v1/me/player/recently-played?limit=5', headers),
+        fetchJSON('https://api.spotify.com/v1/me/top/tracks?time_range=short_term&limit=5', headers),
+        fetchJSON('https://api.spotify.com/v1/me/player/currently-playing', headers),
+    ]);
+
+    const recent = recentlyPlayed?.items?.map((item) => ({
+        name: item.track.name,
+        artist: item.track.artists.map((a) => a.name).join(', '),
+        album: item.track.album.name,
+        url: item.track.external_urls.spotify,
+        id: item.track.id,
+        albumArt: item.track.album.images?.[1]?.url || item.track.album.images?.[0]?.url || null,
+        playedAt: item.played_at,
+    })) || [];
+
+    const top = topTracks?.items?.map((t) => ({
+        name: t.name,
+        artist: t.artists.map((a) => a.name).join(', '),
+        url: t.external_urls.spotify,
+        id: t.id,
+        albumArt: t.album.images?.[1]?.url || t.album.images?.[0]?.url || null,
+    })) || [];
+
+    const current = nowPlaying && nowPlaying.item ? {
+        name: nowPlaying.item.name,
+        artists: nowPlaying.item.artists.map((a) => a.name),        
+        url: nowPlaying.item.external_urls.spotify,
+        id: nowPlaying.item.id,
+        isPlaying: nowPlaying.is_playing,
+    } : null;
+
+    return { recent, top, current };
+}
+
 // Build markdown
-function buildMarkdwon({ weather, hackerNews, quote}) {
+function buildMarkdown({ weather, hackerNews, quote, spotify }) {
     const lines = []
 
     lines.push(`# Daily Digest - ${prettyDate}\n`);
@@ -121,6 +191,38 @@ function buildMarkdwon({ weather, hackerNews, quote}) {
         lines.push('');
     }
 
+    // Spotify
+    if (spotify) {
+        lines.push('## Spotify');
+        lines.push('');
+
+        if (spotify.current) {
+            const status = spotify.current.isPlaying ? 'Now Playing' : 'Last Played';
+            lines.push(`**${status}:** ${spotify.current.name} by ${spotify.current.artists.join(', ')} from the album *${spotify.current.album}*`);
+            lines.push('');
+            lines.push(`<!-- spotify:embed:${spotify.current.id} -->`);
+            lines.push('');
+        }
+
+        if (spotify.recent.length > 0) {
+            lines.push(`### Recently Played`);
+            lines.push('');
+            for (const t of spotify.recent) {
+                lines.push(`- [${t.name}](${t.url}) - ${t.artist} <!-- spotify:track:${t.id}`)
+            }
+            lines.push('');
+        }
+
+        if (spotify.top.length > 0) {
+            lines.push(`### Top Tracks This Month`);
+            lines.push('');
+            for (const [i, t] of spotify.top.entries()) {
+                lines.push(`${i + 1}. [${t.name}](${t.url}) - ${t.artist} <!-- spotify:track:${t.id} -->`);
+            }
+            lines.push('');
+        }
+    }
+
     lines.push('---');
     lines.push('');
     lines.push(`*Generated automatically at ${today.toISOString()} by [daily-digest](https://github.com/audreyau/daily-digest)*`);
@@ -131,13 +233,14 @@ function buildMarkdwon({ weather, hackerNews, quote}) {
 async function main() {
     console.log(`Generating digest for ${dateStr}...`);
 
-    const [weather, hackerNews, quote] = await Promise.all([
+    const [weather, hackerNews, quote, spotify] = await Promise.all([
         getWeather(),
         getHackerNews(),
-        getQuote()
+        getQuote(),
+        getSpotifyData()
     ]);
 
-    const markdown = buildMarkdwon({ weather, hackerNews, quote });
+    const markdown = buildMarkdown({ weather, hackerNews, quote, spotify });
 
     if (!existsSync(DIGESTS_DIR)) mkdirSync(DIGESTS_DIR, { recursive: true })
     
