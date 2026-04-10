@@ -4,9 +4,6 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIGESTS_DIR = join(__dirname, '..', 'digests');
-
-const GITHUB_USERNAME = process.env.GITHUB_USERNAME || 'audreyau';
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN || '';
 const WEATHER_CITY = process.env.WEATHER_CITY || 'Beaverton';
 const WEATHER_COUNTRY = process.env.WEATHER_COUNTRY || 'US';
 
