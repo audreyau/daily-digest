@@ -1,0 +1,11 @@
+{
+  "name": "daily-digest",
+  "version": "1.0.0",
+  "description": "Automated daily digest",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Audrey Ekstrom",
+  "license": "MIT"
+}
