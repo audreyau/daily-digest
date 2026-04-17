@@ -5,6 +5,8 @@ It’s automation!
 
 Daily Digest is an automated dashboard that runs every day, pulls in fresh data from multiple APIs, generates a clean markdown summary, and deploys it to a static site, all without manual intervention.
 
+Live at: https://audreyau.github.io/daily-digest/
+
 ## What It Does
 
 Each day, a scheduled workflow:
